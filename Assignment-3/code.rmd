@@ -1,0 +1,127 @@
+# Start
+
+```{r start, eval=FALSE}
+pipefish <- read.table("pipefish_RNAseq_CPM.tsv", 
+                        sep='\t', 
+                        header=TRUE) 
+
+pipefish <- pipefish[, !(names(pipefish) %in% c("blast_hit_description", "KEEG_ortholog_ID"))]
+head(pipefish)
+```
+
+```{r}
+# Add 0.1 to eliminate zeros
+pipefish_dat <- pipefish[, 2:ncol(pipefish)] + 0.1
+
+# Log-transform the data
+pipefish_log <- log(pipefish[, 2:ncol(pipefish)])
+
+# Visualize the distribution of mean expression
+# across genes before and after the transformation
+
+par(mfrow = c(1, 2))
+hist(rowMeans(pipefish_dat), 
+    main = "Before Log Transformation", 
+    xlab = "Mean Expression")
+hist(rowMeans(pipefish_log), 
+    main = "After Log Transformation", 
+    xlab = "Mean Expression")
+
+```
+
+```{r}
+# Subset the data to include only columns starting with "p" or "N"
+pipefish_sub <- pipefish_log[, grepl("^P|^N", names(pipefish))] # dont need to do this here
+
+
+# Initialize vectors to store t-statistics and p-values
+t_stats <- numeric(nrow(pipefish))
+p_vals <- numeric(nrow(pipefish))
+
+# Perform t-tests for each row (gene)
+for (i in 1:nrow(pipefish)) {
+    t_test <- t.test(pipefish_sub[i, grepl("^P", names(pipefish_sub))], 
+                                        pipefish_sub[i, grepl("^N", names(pipefish_sub))])
+    t_stats[i] <- t_test$statistic
+    p_vals[i] <- t_test$p.value
+}
+
+# Visualize the distribution of t-statistics and p-values
+par(mfrow = c(1, 2))
+hist(t_stats, main = "Distribution of t-Statistics", xlab = "t-Statistic")
+hist(p_vals, main = "Distribution of p-Values", xlab = "p-Value")
+
+```
+
+```{r}
+
+
+# Create a data frame with gene names, t-statistics, and p-values
+results <- data.frame(gene = row.names(pipefish_sub), # chagne this so it has the col 1 values akin to each index
+                        t_stat = t_stats, 
+                        p_val = p_vals)
+
+# Sort the data frame by p-value and select the top 20 genes
+top_genes <- head(results[order(results$p_val), ], 20)
+
+# Print the top 20 genes
+top_genes
+```
+
+```{r}
+
+# Subset the data to include only columns starting with "p" or "N"
+pipefish_sub <- pipefish_log[, grepl("^P|^N", names(pipefish))]
+
+# Initialize vectors to store t-statistics and p-values
+t_stats <- numeric(nrow(pipefish))
+p_vals <- numeric(nrow(pipefish))
+
+# Perform t-tests for each row (gene)
+for (i in 1:nrow(pipefish)) { # gonnna need to change that
+    group1 <- pipefish_sub[i, grepl("^P", names(pipefish_sub))]
+    group2 <- pipefish_sub[i, grepl("^N", names(pipefish_sub))]
+    n1 <- length(group1)
+    n2 <- length(group2)
+    mean1 <- mean(group1)
+    mean2 <- mean(group2)
+    var1 <- var(group1)
+    var2 <- var(group2)
+    pooled_var <- ((n1 - 1) * var1 + (n2 - 1) * var2) / (n1 + n2 - 2)
+    t_stat <- (mean1 - mean2) / sqrt(pooled_var * (1/n1 + 1/n2))
+    t_stats[i] <- t_stat
+    p_val <- 2 * pt(-abs(t_stat), df = n1 + n2 - 2)
+    p_vals[i] <- p_val
+}
+
+# Create a data frame with gene names, t-statistics, and p-values
+results <- data.frame(gene = row.names(pipefish_sub), 
+                      t_stat = t_stats, 
+                      p_val = p_vals)
+# this is the same shit from the previous code chunk
+
+
+# Adjust p-values using the Benjamini-Hochberg method\
+
+# idk what the fuck that is, should probably do something we did in class
+
+results$pval_rank <- rank(results$p_val)
+results$padj <- results$p_val * nrow(results) / results$pval_rank
+results$padj[results$padj > 1] <- 1
+
+# Filter genes with an adjusted p-value below 0.05
+sig_genes <- results[results$padj < 0.05, ]
+
+# Create a plot of gene expression levels for significant genes
+plot(sig_genes$P, sig_genes$N, col = ifelse(sig_genes$padj < 0.05, "red", "black"),
+    xlab = "Expression in Pregnant Females", ylab = "Expression in Non-Pregnant Males",
+    main = "Expression Levels of Significant Genes",
+    sub = "Adjusted p-value < 0.05",
+    xlim = c(0, max(sig_genes$P, sig_genes$N)))
+legend("topright", legend = c("Adjusted p-value < 0.05", "Adjusted p-value >= 0.05"),
+       col = c("red", "black"), pch = 1)
+```
+
+```{r}
+
+```

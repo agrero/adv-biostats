@@ -1,0 +1,190 @@
+---
+output:
+  pdf_document: default
+  html_document: default
+---
+
+# Assignment 2: Heterogeneity Test
+
+## by Alex Guerrero
+
+# Interaction Plots
+
+## Differentiating Mean Responses
+
+```{r genotype and strain response line plot, eval=TRUE, echo=FALSE, fig.height=3.5, fig.width=7}
+library(ggplot2)
+
+# set working directory
+setwd("C:/coding-projects/adv-biostats/Assignment-2/")
+
+# read in the flu.tsv file
+flu_data <- read.table("flu.tsv", header = TRUE, sep = "\t")
+
+strain_genotype_counts <- table(flu_data$genotype, flu_data$strain)
+
+mean_response <- aggregate(response ~ strain + genotype, 
+                            data = flu_data, 
+                            FUN = mean)
+mr_plot <- ggplot(mean_response, aes(x = strain, y = response, group = genotype)) +
+    geom_line(aes(color = genotype)) +
+    geom_point(aes(color = genotype))  +
+    scale_color_brewer(palette = "Set1") +
+    labs(title = "Mean Response by Strain and Genotype",
+        x = "Strain",
+        y = "Mean Response") +
+    theme(plot.title = element_text(hjust = 0.5),
+        axis.text.x = element_text(angle = 45, hjust = 1))
+print(mr_plot)
+
+```
+
+The first meaningful difference in response you can see is that of B25's reaction to A1b/162W, y the mean response it is evident that there is a strong interaction between said genotype and strain. Another interesting interaction is between that of genotype C27 and strain A1b/189O. Genotype's A8 and B25's response to strain A1b/189O is somewhere between that of A1b/189F and A1b/196K, almost equivalent A1b/198P. However genotype C27 has a much weaker response in comparison showing a negative interaction with regards to mean response. We can also see that C27 has on average around half the mean response of both A8 and B25 which are more homogeneous. Differentiating between A8 and B25 (outside of what has already been stated) requires a look at their distributions which we will do with the next figure.
+
+## Differentiating Mean Response Distributions
+
+```{r same genotype strain p value matrix, eval=TRUE, echo=FALSE, fig.height=3.89, fig.width=9}
+# create a list to store the matrices
+genotype_p_values_list <- list()
+
+# loop through each genotype and perform a t-test between each individual strain
+for (g in unique(flu_data$genotype)) {
+    # create a dataframe for the current genotype
+    genotype <- flu_data[flu_data$genotype == g, ]
+    # create an empty matrix to store the p-values
+    p_values <- matrix(nrow = length(unique(genotype$strain)), 
+                                        ncol = length(unique(genotype$strain)))
+    strains <- unique(genotype$strain)
+    for (i in 1:length(strains)) {
+        for (j in 1:length(strains)) {
+            if (i != j) {
+                p_values[i, j] <- t.test(genotype$response[genotype$strain == strains[i]], 
+                                                            genotype$response[genotype$strain == strains[j]])$p.value
+            }
+        }
+    }
+    # set the row and column names of the matrix to the strain names
+    row.names(p_values) <- unique(genotype$strain)
+    colnames(p_values) <- unique(genotype$strain)
+    # append the matrix to the list
+    genotype_p_values_list <- append(genotype_p_values_list, list(p_values))
+}
+
+# create a heatmap for each matrix in the genotype_p_values_list
+for (i in 1:length(genotype_p_values_list)) {
+    # create a dataframe from the matrix
+    df <- data.frame(expand.grid(Var1 = rownames(genotype_p_values_list[[i]]), 
+                                    Var2 = colnames(genotype_p_values_list[[i]])))
+    df$value <- as.vector(genotype_p_values_list[[i]])
+    # create the heatmap
+    heatmap <- ggplot(df, aes(x = Var1, y = Var2, fill = value)) +
+        geom_tile() +
+        scale_fill_gradient(low = "white", high = "red") +
+        labs(title = paste0("P-Values for Genotype ", unique(flu_data$genotype)[i]),
+                x = "Strain",
+                y = "Strain") +
+        theme(plot.title = element_text(hjust = 0.5),
+                axis.text.x = element_text(angle = 45, hjust = 1))
+    # display the heatmap
+    print(heatmap)
+}
+
+```
+
+The heatmaps above show the p-values for the t-tests performed between each pair of strains for each genotype. The p-values are represented by a color gradient, with white indicating a high p-value (not significant) and red indicating a low p-value (significant). This significance is with regards to genotypic effects (mean response) within each genotype.
+
+Strain A1b/127R has a p\<0.05 in relation to each strain's mean response, in addition, for B25 both strains A1b/162W and A1b/128T have p\<0.05. Thus indicating a global genotypic effect for strain A1b/127R and local genotypic effects for A1b/162W and A1b/128T.
+
+```{r genotype and strain response box plot, eval=TRUE, echo=FALSE, fig.height=3.5, fig.width=9}
+# change me into a box and whisker plot
+# plot mean response by strain and genotype
+bw_plot <- ggplot(flu_data, aes(x = strain, y = response, fill = genotype)) +
+    geom_boxplot(aes(color = genotype), 
+                        position = position_dodge(width = 0.9)) +
+    scale_fill_brewer(palette = "Set1") +
+    labs(title = "Response by Genotype and Strain",
+            x = "Genotype",
+            y = "Response") +
+    theme(plot.title = element_text(hjust = 0.5),
+            axis.text.x = element_text(angle = 45, hjust = 1))
+
+# show plot
+print(bw_plot)
+
+```
+
+If we take the distributions that the previous p-value heatmaps were generated with, we can get a better understanding of the mean response of each genotype to a given strain. For example if we look at A1b/127R, of which we found to have a global genotypic effect, we can see that the three genotypes are have lower mean responses and distributions.
+
+For B25, starting with A1b/162W we can see that its mean response is near twice the average for interstrain comparisons. Then for B25 A1b/128T we can see that the Interquartile range is generally shifted higher by \~5.
+
+# Standard Deviation of Strain Means
+
+```{r eval=TRUE, fig.height=6, fig.width=6.5, heterogeneity-test, echo=FALSE, paged.print=TRUE}
+# shuffle strains
+# shuffle strains for each genotype
+set.seed(124) # set seed for reproducibility
+flu_data_shuffled <- flu_data
+for (g in unique(flu_data$genotype)) {
+    flu_data_shuffled[flu_data_shuffled$genotype == g, "strain"] <- sample(flu_data_shuffled[flu_data_shuffled$genotype == g, "strain"])
+}
+
+# calculate standard deviation for each strain 
+# for a given genotype in flu_data_shuffled
+sd_by_strain <- tapply(flu_data_shuffled$response, 
+                    list(flu_data_shuffled$genotype, 
+                        flu_data_shuffled$strain), 
+                        sd)
+
+# plot sd_by_strain per genotype as a line plot
+
+
+
+# calculate the average standard deviation for each strain
+avg_sd_shuffled <- apply(sd_by_strain, 2, mean)
+
+# calculate the average standard deviation for each non_shuffled strain
+
+sd_by_strain <- tapply(flu_data$response, 
+                    list(flu_data$genotype, 
+                        flu_data$strain), 
+                        sd)
+
+avg_sd <- apply(sd_by_strain, 2, mean)
+
+boxplot(list(avg_sd, avg_sd_shuffled), 
+    ylab = "Standard Deviation (SD)",
+    names = c("Average SD",
+                "Average SD Shuffled"))
+
+
+
+# calculate the average standard deviation for each non_shuffled strain
+sd_by_strain <- tapply(flu_data$response, 
+                    list(flu_data$genotype, 
+                        flu_data$strain), 
+                        sd)
+
+avg_sd <- apply(sd_by_strain, 2, mean)
+
+# perform t-test between avg_sd and avg_sd_shuffled
+t_test <- t.test(avg_sd, avg_sd_shuffled)
+
+# store p-value in variable of the same name
+p_value <- t_test$p.value
+
+
+# perform ANOVA test
+anova_result <- aov(avg_sd ~ avg_sd_shuffled)
+
+# print ANOVA table
+#print(summary(anova_result))
+
+```
+
+Here we have a box and whisker plot where we took the standard deviation from the mean of each strain from out flu data, and then we average these values across genotypes. We then shuffled the strains within each genotype and took the standard deviations for each strain and averaged it like stated above. this comparison allows us to see if the resulting variation for each strain is due to a global genotypic effect.
+
+```{r eval=TRUE, fig.height=7, fig.width=7, anova_test, echo=FALSE, paged.print=TRUE}
+print(summary(anova_result))
+```
+
+Performing an Anova test where our F value fails to reach our significance level of F\<0.05, as well as having a Pr(\>F) being \>\> 0.05 we fail to reject our null hypothesis. Meaning there is not a statistical difference in variation across strains while controlling for genotype. This is consistent with our Response by Genotype and Strain figure. With the exception of strains listed as significant, there is significant overlap in IQR as well as ranges across each of the strains. Controlling for genotype we wouldn't likely see a significant difference as the mean responses seem to vary more across each of the genotypes rather than across strains.
