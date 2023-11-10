@@ -31,6 +31,7 @@ hist(rowMeans(pipefish_log),
 
 ```{r}
 # Subset the data to include only columns starting with "p" or "N"
+
 pipefish_sub <- pipefish_log[, grepl("^P|^N", names(pipefish))] # dont need to do this here
 
 
@@ -50,6 +51,13 @@ for (i in 1:nrow(pipefish)) {
 par(mfrow = c(1, 2))
 hist(t_stats, main = "Distribution of t-Statistics", xlab = "t-Statistic")
 hist(p_vals, main = "Distribution of p-Values", xlab = "p-Value")
+
+
+# relationship between the p value and some metric (differential expression)
+
+# t stat x and p-vlaue gaus distributii
+# plot points and see asyymetry
+# can do any metric (log fold change)
 
 ```
 
@@ -102,6 +110,7 @@ results <- data.frame(gene = row.names(pipefish_sub),
 
 
 # Adjust p-values using the Benjamini-Hochberg method\
+# p.adjust
 
 # idk what the fuck that is, should probably do something we did in class
 
@@ -111,6 +120,13 @@ results$padj[results$padj > 1] <- 1
 
 # Filter genes with an adjusted p-value below 0.05
 sig_genes <- results[results$padj < 0.05, ]
+
+
+# MA plot 
+# mean xexpresson x axis over all 12 samples
+# y axis log fold change preg/non preg
+# really looking for assymetry in the data
+
 
 # Create a plot of gene expression levels for significant genes
 plot(sig_genes$P, sig_genes$N, col = ifelse(sig_genes$padj < 0.05, "red", "black"),
