@@ -1,0 +1,154 @@
+---
+output:
+  pdf_document: default
+  html_document: default
+---
+
+```{r start, eval=TRUE, echo=FALSE}
+setwd("C:/coding-projects/adv-biostats/Assignment-3/")
+pipefish <- read.table("pipefish_RNAseq_CPM.tsv", 
+                        sep='\t', 
+                        header=TRUE) 
+
+pipefish <- pipefish[, !(names(pipefish) %in% c("blast_hit_description", "KEEG_ortholog_ID"))]
+
+```
+
+# Question 1
+
+```{r eval=TRUE, echo=FALSE}
+# Add 0.1 to eliminate zeros
+pipefish_dat <- pipefish[, 2:ncol(pipefish)] + 0.1
+
+# Log-transform the data
+pipefish_log <- log(pipefish_dat[, 1:ncol(pipefish_dat)])
+
+# Visualize the distribution of mean expression
+# across genes before and after the transformation
+
+par(mfrow = c(1, 2))
+hist(rowMeans(pipefish_dat), 
+    main = "Before Log Transformation", 
+    xlab = "Mean Expression")
+hist(rowMeans(pipefish_log), 
+    main = "After Log Transformation", 
+    xlab = "Mean Expression")
+
+```
+
+# Question 2
+
+```{r eval=TRUE, echo=FALSE}
+# Subset the data to include only columns starting with "p" or "N"
+
+pipefish_p <- pipefish_log[, grepl("^P", names(pipefish_log))]
+pipefish_n <- pipefish_log[, grepl("^N", names(pipefish_log))]
+
+
+# Calculate the t-statistic for each row in pipefish_p and pipefish_n
+t_stats <- numeric(nrow(pipefish_p))
+p_val <- numeric(nrow(pipefish_p))
+for (i in 1:nrow(pipefish_p)) {
+    t_stats[i] <- t.test(pipefish_p[i,], pipefish_n[i,])$statistic
+    p_val[i] <- t.test(pipefish_p[i,], pipefish_n[i,])$p.value
+}
+t_stats <- as.matrix(t_stats)
+p_val <- as.matrix(p_val)
+
+```
+
+```{r eval=TRUE, echo=FALSE}
+# Visualize the distribution of t-statistics and p-values
+plot(t_stats, 
+    p_val, 
+    xlab = "t-Statistic", 
+    ylab = "p-Value", 
+    main = "Scatter Plot of t-Statistics and p-Values")
+abline(v=0, lty=2)
+abline(h=0.05, lty=2)
+
+```
+
+# Question 3
+
+```{r eval=TRUE, echo=FALSE}
+# Create a data frame with gene names, t-statistics, and p-values
+results <- data.frame(t_stat = t_stats, 
+                      p_val = p_val)
+
+top_20 <- head(results[order(results$p_val),], 20)
+print(top_20)
+```
+
+# Question 4
+
+```{r eval=TRUE, echo=FALSE}
+
+# Use p.adjust to adjust the p-values in the results dataframe 
+# using the Benjamini-Hochberg method
+
+results$padj <- p.adjust(results$p_val, method = "BH")
+
+# Filter genes with an adjusted p-value below 0.05
+adj_sig_genes <- results[results$padj < 0.05, ] # 2 genes
+non_adj_sig_genes <- results[results$p_val < 0.05, ] # 35 genes
+
+# Remove any genes that are in both non_adj_sig_genes and adj_sig_genes from non_adj_sig_genes
+non_adj_sig_genes <- non_adj_sig_genes[!rownames(non_adj_sig_genes) %in% rownames(adj_sig_genes), ]
+
+```
+
+```{r eval=TRUE, echo=FALSE}
+# MA plot 
+# mean xexpresson x axis over all 12 samples
+# y axis log fold change preg/non preg
+# really looking for assymetry in the data
+
+# Subset pipefish_log based on row numbers from non_adj_sig_genes
+subset_pipefish_log <- pipefish_log[rownames(non_adj_sig_genes), ]
+adj_subset_pipefish_log <- pipefish_log[rownames(adj_sig_genes), ]
+
+# Calculate the mean expression for each gene
+subset_pipefish_log$mean <- rowMeans(subset_pipefish_log)
+adj_subset_pipefish_log$mean <- rowMeans(adj_subset_pipefish_log)
+
+# Calculate the log fold change for each gene
+
+sublog_p <- subset_pipefish_log[,grepl('^P', names(subset_pipefish_log))]
+sublog_n <- subset_pipefish_log[,grepl('^N', names(subset_pipefish_log))]
+
+adj_sublog_p <- adj_subset_pipefish_log[,grepl('^P', names(adj_subset_pipefish_log))]
+adj_sublog_n <- adj_subset_pipefish_log[,grepl('^N', names(adj_subset_pipefish_log))]
+
+p_mean <- rowMeans(sublog_p)
+n_mean <- rowMeans(sublog_n)
+
+adj_p_mean <- rowMeans(adj_sublog_p)
+adj_n_mean <- rowMeans(adj_sublog_n)
+
+log_change <- log2(p_mean) - log2(n_mean)
+adj_log_change <- log2(adj_p_mean) - log2(adj_n_mean)
+
+```
+
+```{r eval=TRUE, echo=FALSE}
+# Create a scatter plot of log fold change vs. gene names
+# Remove rows in log_change that share any rownames with adj_sig_genes
+
+
+plot(log_change ~ non_adj_sig_genes$p_val, 
+    xlab = "p-value", 
+    ylab = "Log Fold Change", 
+    main = "Scatter Plot of Log Fold Change vs. Gene Names")
+
+# Add adj_log_change and adj_sig_genes$p_val to the plot
+points(adj_sig_genes$p_val, adj_log_change, col = "blue")
+
+# Add a legend
+legend("topright", legend = c("Non-Adjusted p-value", "Adjusted p-value"), 
+       col = c("black", "blue"), pch = 1)
+abline(h=0, lty=2)
+
+```
+
+The graph above shows the log2 fold change in mean expression for each gene when comparing pregnant and non pregnant males. We performed a Benjamini & Hochberg p value correction on the data which took us from 925 samples with a p\<0.05 to 56, these 56 are highlighted in blue. Thus, approximately 94% of our significantly differentially expressed genes are false positives. Comparing the adjusted and non adjusted p-values in terms of log fold change between pregnant and non pregnant males, you can see that stronger correlation (p-value) is skewed more towards a decrease in expression (negative log fold change).
