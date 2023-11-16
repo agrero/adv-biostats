@@ -27,6 +27,8 @@ for col in probabilities.columns:
     plt.savefig(os.path.join(plot_dir, 'probability_dists', f'{col} probability'))
     plt.clf()
 
+
+
 fig = plt.figure()
 ax = fig.add_subplot(111, projection='3d')
 xs = data['distance']
@@ -40,15 +42,19 @@ ax.set_zlabel('Age')
 theta = 0.0
 phi = 0.0
 
-for i in range(4):
-    theta = i * 30
-    for j in range(4):
-        phi = j * 30
-        
-        ax.view_init(elev=theta, azim=phi)
+save = False
 
-        plt.savefig(os.path.join(plot_dir, '3d_joint', f'{theta} - {phi} distance v age v joint probability 3d plot'))
+if save:
 
+    for i in range(4):
+        theta = i * 30
+        for j in range(4):
+            phi = j * 30
+            
+            ax.view_init(elev=theta, azim=phi)
+
+            plt.savefig(os.path.join(plot_dir, '3d_joint', f'{theta} - {phi} distance v age v joint probability 3d plot'))
+plt.show()
 plt.clf()
 
 # redoing it removing random effects
@@ -63,11 +69,15 @@ ax.set_zlabel('Age (A)')
 theta = 0.0
 phi = 0.0
 
-for i in range(4):
-    theta = i * 30
-    for j in range(4):
-        phi = j * 30
-        
-        ax.view_init(elev=theta, azim=phi)
+if save:
+    for i in range(4):
+        theta = i * 30
+        for j in range(4):
+            phi = j * 30
+            
+            ax.view_init(elev=theta, azim=phi)
 
-        plt.savefig(os.path.join(plot_dir, '3d_no_random', f'{theta} - {phi} distance v age no random'))
+            plt.savefig(os.path.join(plot_dir, '3d_no_random', f'{theta} - {phi} distance v age no random'))
+
+plt.show()
+plt.clf()
