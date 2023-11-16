@@ -9,6 +9,8 @@ plot_dir = 'plots'
 data = pd.read_csv('spb_data.csv', index_col=0)
 probabilities = pd.read_csv('spb_probabilities.csv', index_col=0)
 
+save = False
+
 
 # plot value distributions
 
@@ -16,7 +18,10 @@ for col in data.columns:
     plt.hist(data[col], bins=20, alpha=0.5, label='data')
     plt.xlabel(col)
     plt.legend(loc='upper right')
-    plt.savefig(os.path.join(plot_dir, 'data_distributions' ,f'{col} data'))
+    if save:
+        plt.savefig(os.path.join(plot_dir, 'data_distributions' ,f'{col} data'))
+    else:
+        plt.show()
     plt.clf()
 
 
@@ -24,7 +29,10 @@ for col in probabilities.columns:
     plt.hist(probabilities[col], bins=20, alpha = 0.5, label='probability')
     plt.xlabel(col)
     plt.legend(loc = 'upper right')
-    plt.savefig(os.path.join(plot_dir, 'probability_dists', f'{col} probability'))
+    if save:
+        plt.savefig(os.path.join(plot_dir, 'probability_dists', f'{col} probability'))
+    else:
+        plt.show()
     plt.clf()
 
 
@@ -42,7 +50,6 @@ ax.set_zlabel('Age')
 theta = 0.0
 phi = 0.0
 
-save = False
 
 if save:
 
