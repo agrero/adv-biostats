@@ -60,19 +60,23 @@ data['infection'] = np.zeros(n_samples)
 # generate probabilities dataframe
 probabilities = pd.DataFrame()
 
+# flip this
 probabilities['distance'] = data['distance'].apply(lambda x: x/200 if x > 0 else 1.1)
+# flip this
+
 probabilities['age'] = data['age'].apply(lambda x: get_age_prob(x, mean = 45, mean_prob = 0.8, decay = 0.10))
 probabilities['urban'] = data['urban'].apply(get_random_proability)
 
 # calculate joint probability
 probabilities['joint'] = probabilities['distance'] * probabilities['age'] + probabilities['urban']
 
-# filter illogical probabilities
-probabilities['joint'].loc[probabilities['joint'] > 1] = 1
-probabilities['joint'].loc[probabilities['joint'] < 0] = 0
+# minmax filter the data in probabilities['joint'] from 0 to 1
+probabilities['joint'] = (probabilities['joint'] - probabilities['joint'].min()) / (probabilities['joint'].max() - probabilities['joint'].min())
 
 # generating labels based on the joint probabilities using a binomial distribution
 data['infection'] = np.random.binomial(n=1, p=probabilities['joint']) 
 
-data.to_csv('spb_data.csv', index=True)
-probabilities.to_csv('spb_probabilities.csv', index=True)
+save = False
+if save:
+    data.to_csv('spb_data.csv', index=True)
+    probabilities.to_csv('spb_probabilities.csv', index=True)

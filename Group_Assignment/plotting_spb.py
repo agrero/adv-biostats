@@ -11,13 +11,12 @@ probabilities = pd.read_csv('spb_probabilities.csv', index_col=0)
 
 save = False
 
-
 # plot value distributions
 
 for col in data.columns:
     plt.hist(data[col], bins=20, alpha=0.5, label='data')
     plt.xlabel(col)
-    plt.legend(loc='upper right')
+    plt.ylabel('count')
     if save:
         plt.savefig(os.path.join(plot_dir, 'data_distributions' ,f'{col} data'))
     else:
@@ -34,7 +33,6 @@ for col in probabilities.columns:
     else:
         plt.show()
     plt.clf()
-
 
 
 fig = plt.figure()

@@ -1,0 +1,99 @@
+---
+output:
+  pdf_document: default
+  html_document: default
+---
+```{r creating functions}
+get_age_prob <- function(age, mean=45, mean_prob=0.95, decay=0.15) {
+    # Calculates the probability of a person being selected for a study based on their age.
+    # Args:
+    #   age (int): The age of the person.
+    #   mean (int, optional): The mean age of the population. Defaults to 45.
+    #   mean_prob (float, optional): The probability of a person being selected when their age is equal to the mean age. Defaults to 0.95.
+    #   decay (float, optional): The rate at which the probability decreases as the age deviates from the mean age. Defaults to 0.15.
+    # Returns:
+    #   float: The probability of the person being selected for the study.
+    
+    return(mean_prob - (mean - age) * decay)
+}
+
+get_random_proability <- function(data, minimum=-1.0, maximum=1.0) {
+    # Returns a random probability value between the specified minimum and maximum values.
+    # Parameters:
+    #   data (array-like): The data to generate the probability for.
+    #   minimum (float): The minimum value of the probability (default -1.0).
+    #   maximum (float): The maximum value of the probability (default 1.0).
+    # Returns:
+    #   float: A random probability value between the specified minimum and maximum values.
+    
+    return(runif(1, min=minimum, max=maximum))
+}
+
+```
+
+```{r data generation}
+# setting the random seed to 42 for reproducibility
+set.seed(42)
+
+# mean age in the US
+us_mean_age <- 38.9
+
+# number of samples to generate
+n_samples <- 10000
+
+data <- data.frame(age = rep(0, n_samples), 
+                   distance = rep(0, n_samples), 
+                   urban = rep(0, n_samples), 
+                   infection = rep(0, n_samples))
+
+
+# generating normally distributed ages around the mean age with a standard deviation of 10
+data$age <- rnorm(n_samples, mean = us_mean_age, sd = 10)
+
+# generating distances from the target location 
+# with a normal distribution and clipping the values to be between -500 and 500
+
+data$distance <- abs(pmin(pmax(rnorm(n_samples, mean = 0, sd = 100), -500), 500))
+
+# generating urban not urban as 1 and 0 respectively
+data$urban <- sample(0:1, n_samples, replace = TRUE)
+
+# initializing labels to be all zeros
+data$infection <- rep(0, n_samples)
+
+```
+
+```{r probability generation}
+# generate probabilities dataframe
+probabilities <- data.frame(age = rep(0, n_samples), 
+                            distance = rep(0, n_samples), 
+                            urban = rep(0, n_samples), 
+                            joint = rep(0, n_samples))
+
+
+# normalizing the distance data between 0 and 1
+norm_dist <- (data$distance - min(data$distance)) / (max(data$distance) - min(data$distance))
+
+# calculating the probability of being infected based on distance
+probabilities$distance <- 1-norm_dist
+
+# calculating the probability of being infected based on age
+probabilities$age <- sapply(data$age, 
+                            function(x) get_age_prob(x, 
+                            mean = 45, mean_prob = 0.8, decay = 0.10))
+
+# calculating the probability of being infected based on urban status
+probabilities$urban <- sapply(data$urban, 
+                              get_random_proability)
+
+# calculate joint probability
+probabilities$joint <- probabilities$distance * probabilities$age + probabilities$urban
+
+# minmax filter the data in probabilities$joint from 0 to 1
+probabilities$joint <- (probabilities$joint - min(probabilities$joint)) / (max(probabilities$joint) - min(probabilities$joint))
+
+# generating labels based on the joint probabilities using a binomial distribution
+data$infection <- rbinom(n_samples, 1, probabilities$joint)
+
+
+```
