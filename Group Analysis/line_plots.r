@@ -33,6 +33,8 @@ for (i in 1:nrow(unique_combinations)) {
                                              Group = combination))
 }
 
+
+
 means <- aggregate(Count ~ Group, data = plot_data, FUN = mean)
 
 plot <- ggplot(data = plot_data, 
