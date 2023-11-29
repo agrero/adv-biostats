@@ -91,5 +91,9 @@ plot <- ggplot(data = new_data, aes(x = x)) +
             title = "Germination Prop Fit") 
 
 
-ggsave(paste("plots/over_dist", "gaussian-fit.png"))
+ggsave(paste("plots/over_dist/", "gaussian-fit.png"))
 
+# left to go
+## make a plot of the the standard deviation of the mean 
+## for each unique combination of each point
+### show that it doesn't change much if at all

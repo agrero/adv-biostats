@@ -12,7 +12,7 @@ total_plot <- ggplot(data, aes(x = germination_prop)) +
     labs(title = "Histogram of Germination Prop for All Data") +
     scale_x_continuous(limits = c(0, 1))
 
-ggsave(paste("over_dist/", "plots/", "Overall Data.png"))
+ggsave(paste0( "plots/", "over_dist/", "Overall Data.png"))
 
 
 
@@ -28,7 +28,7 @@ for (i in fire_temps) {
         scale_x_continuous(limits = c(0, 1))
 
     # Save the plot as an image file
-    ggsave(paste("indi_dist/", "plots/", 'Fire Temp = ', i, '.png'))
+    ggsave(paste0("plots/", "indi_dist/", 'Fire Temp = ', i, '.png'))
 }
 
 # Get unique values of pH_level
@@ -43,7 +43,7 @@ for (i in pH_values) {
         scale_x_continuous(limits = c(0, 1))
 
     # Save the plot as an image file
-    ggsave(paste("indi_dist/", "plots/", 'pH = ', i, '.png'))
+    ggsave(paste0("plots/", "indi_dist/", 'pH = ', i, '.png'))
 }
 
 # Get unique combinations of pH_level and fire_temp
@@ -65,7 +65,7 @@ for (i in 1:nrow(unique_combinations)) {
         scale_x_continuous(limits = c(0,1))
 
     # Save the plot as an image file
-    ggsave(paste0("indi_dist/", "plots/", 
+    ggsave(paste0("plots/", "indi_dist/", 
         "ph = ", unique_combinations[i,1],
         " fire_temp = ", unique_combinations[i,2], '.png'))
 }

@@ -44,4 +44,4 @@ plot <- ggplot(data = plot_data,
 
 
 
-ggsave(paste("over_dist/","plots/", " smoothed-germination_prop_distribution-all_pH_&_fire.png"))
+ggsave(paste0("plots/over_dist/", "smoothed-germination_prop_distribution-all_pH_&_fire.png"))
