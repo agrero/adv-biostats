@@ -60,6 +60,7 @@ legend_labels <- paste("pH:", mean_germination_prop$pH_level, "Fire:", mean_germ
 colors <- c("red", "blue", "green", "purple", "orange", "pink")
 
 for (i in 1:nrow(mean_germination_prop)) {
+
     ph <- mean_germination_prop$pH_level[i]
     fire <- mean_germination_prop$fire_temp[i]
 
@@ -74,26 +75,23 @@ for (i in 1:nrow(mean_germination_prop)) {
 
 plot <- ggplot(data = new_data, aes(x = x)) +
         geom_line(aes(y = X1), color = "red", ) +
-        geom_line(aes(y = X2), color = "blue") +
-        geom_line(aes(y = X3), color = "green") +
-        geom_line(aes(y = X4), color = "purple") +
-        geom_line(aes(y = X5), color = "orange") +
+        geom_line(aes(y = X2), color = "cyan") +
+        geom_line(aes(y = X3), color = "#ffde09") +
+        geom_line(aes(y = X4), color = "blue") +
+        geom_line(aes(y = X5), color = "green") +
         geom_line(aes(y = X6), color = "pink") +
 
-        scale_color_manual(values = c("X1" = "red", "X2" = "blue", "X3" = "green",
-                                      "X4" = "purple", "X5" = "orange", "X6" = "pink"),
-                                      labels = c("X1" = legend_labels[1], "X2" = legend_labels[2], "X3" = legend_labels[3],
-                                      "X4" = legend_labels[4], "X5" = legend_labels[5], "X6" = legend_labels[6])) +
-                            
         guides(color = guide_legend(title = "Legend")) +
         labs(x = "Germination Prop", 
             y = "Density", 
             title = "Germination Prop Fit") 
 
 
-ggsave(paste("plots/over_dist/", "gaussian-fit.png"))
+ggsave(paste("plots/over_dist/", "gaussian-fit2.png"))
 
 # left to go
 ## make a plot of the the standard deviation of the mean 
 ## for each unique combination of each point
 ### show that it doesn't change much if at all
+
+
